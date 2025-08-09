@@ -4,13 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>MuscleBoss</title>
-<link rel="icon" href="icon-192.png" type="image/png">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#111111">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <!-- Favicon & icônes (OM + tigre) -->
+  <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
+  <link rel="icon" href="icon-512.png" sizes="512x512" type="image/png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="shortcut icon" href="icon-192.png" type="image/png">
+
+  <!-- iOS PWA tweaks -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <style>
     :root { --bg:#0f0f10; --fg:#f5f5f7; --muted:#a0a0a6; --accent:#42b883; --card:#1a1b1e; }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, Roboto, Segoe UI, Arial, sans-serif}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,Roboto,Segoe UI,Arial,sans-serif}
     header{position:sticky;top:0;background:var(--bg);padding:14px 16px;border-bottom:1px solid #222;z-index:10}
     h1{font-size:20px;margin:0}
     .tabs{display:flex;gap:8px;padding:8px;position:sticky;top:56px;background:var(--bg);border-bottom:1px solid #222;z-index:9}
@@ -28,13 +40,14 @@
     .btn.ghost{background:#242628;color:var(--fg)}
     .row{display:flex;gap:10px;align-items:center}
     input[type="checkbox"]{width:20px;height:20px}
-    input[type="number"], input[type="text"]{width:100%;background:#101114;border:1px solid #2a2a2a;color:var(--fg);border-radius:10px;padding:10px}
+    input[type="number"],input[type="text"]{width:100%;background:#101114;border:1px solid #2a2a2a;color:var(--fg);border-radius:10px;padding:10px}
     label{font-size:13px;color:var(--muted)}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .small{font-size:12px;color:var(--muted)}
     .center{display:flex;justify-content:center;align-items:center}
-    .hint{font-size:12px;color:#8aa; margin-top:8px}
+    .hint{font-size:12px;color:#8aa;margin-top:8px}
     footer{position:fixed;bottom:0;left:0;right:0;padding:12px;background:linear-gradient(180deg, transparent, rgba(15,15,16,0.9));backdrop-filter: blur(6px)}
+    a{color:var(--fg)}
   </style>
 </head>
 <body>
@@ -94,7 +107,7 @@
     </section>
   </main>
 
-  <footer class="center small">Ajoute-la à l’écran d’accueil : Partager → « Sur l’écran d’accueil »</footer>
+  <footer class="center small">Astuce iPhone : Partager → « Sur l’écran d’accueil » pour l’avoir comme appli.</footer>
 
   <script>
   // --- Data ---
@@ -170,21 +183,16 @@
   ];
 
   const shoppingDefaults = [
-    // Cereals
     ["Flocons d’avoine","500 g"],["Lait","3 L"],["Beurre de cacahuète","250 g"],["Fruits à coque (amandes/noix/cajou)","200 g"],
-    // Proteins
     ["Filets de poulet","1,2 kg"],["Steak haché bœuf maigre","1 kg"],["Saumon frais","200 g"],["Cabillaud/Colin","400 g"],
     ["Conserves poisson (maquereau/sardines/thon)","600 g"],
-    // Dairy & eggs
     ["Œufs","12 unités"],["Fromage","200 g"],
-    // Carbs
     ["Riz","1 kg"],["Pâtes","1 kg"],["Pommes de terre","2 kg"],["Patates douces","1 kg"],
-    // Fruits & veg
     ["Pommes","1 kg"],["Bananes","1 kg"],["Brocolis","500 g"],["Carottes","500 g"],["Haricots verts","500 g"],
     ["Épinards","500 g"],["Avocat","1"],["Citron","1"]
   ];
 
-  // --- Tabs ---
+  // Tabs
   const tabs = document.querySelectorAll('.tab');
   const sections = document.querySelectorAll('section');
   tabs.forEach(t => t.addEventListener('click', () => {
@@ -194,143 +202,101 @@
     document.getElementById(t.dataset.tab).classList.add('active');
   }));
 
-  // --- Render workouts ---
+  // Workouts (mark done per day)
   const workoutWrap = document.getElementById('workouts');
   const today = new Date().toISOString().slice(0,10);
   const doneKey = "mb_done_" + today;
   const doneSet = new Set(JSON.parse(localStorage.getItem(doneKey) || "[]"));
-
-  function saveDone() {
-    localStorage.setItem(doneKey, JSON.stringify(Array.from(doneSet)));
-  }
+  function saveDone(){ localStorage.setItem(doneKey, JSON.stringify([...doneSet])); }
 
   workouts.forEach(w => {
-    const card = document.createElement('div');
-    card.className = 'card';
+    const card = document.createElement('div'); card.className='card';
     const header = document.createElement('div');
     header.innerHTML = `<div class="title">${w.title}</div><div class="sub">${w.focus}</div>`;
     card.appendChild(header);
-
     w.exercises.forEach(ex => {
-      const row = document.createElement('div');
-      row.className = 'exercise';
+      const row = document.createElement('div'); row.className='exercise';
       row.innerHTML = `<div><strong>${ex[0]}</strong><div class="small">${ex[1]} séries • ${ex[2]} reps ${ex[3] ? "• repos "+ex[3] : ""}</div></div>`;
       card.appendChild(row);
     });
-
-    const toggle = document.createElement('button');
-    toggle.className = 'btn';
-    const key = w.key;
-    const isDone = doneSet.has(key);
-    toggle.textContent = isDone ? "Marquer non fait aujourd’hui" : "Marquer fait aujourd’hui";
-    toggle.addEventListener('click', () => {
-      if (doneSet.has(key)) { doneSet.delete(key); } else { doneSet.add(key); }
-      saveDone();
-      toggle.textContent = doneSet.has(key) ? "Marquer non fait aujourd’hui" : "Marquer fait aujourd’hui";
-    });
+    const toggle = document.createElement('button'); toggle.className='btn';
+    const key = w.key; toggle.textContent = doneSet.has(key) ? "Marquer non fait aujourd’hui" : "Marquer fait aujourd’hui";
+    toggle.addEventListener('click', () => { doneSet.has(key) ? doneSet.delete(key) : doneSet.add(key); saveDone(); toggle.textContent = doneSet.has(key) ? "Marquer non fait aujourd’hui" : "Marquer fait aujourd’hui"; });
     card.appendChild(toggle);
     workoutWrap.appendChild(card);
   });
 
-  // --- Render meal plan ---
+  // Meal plan
   const mealWrap = document.getElementById('mealplan');
   mealPlan.forEach(day => {
-    const card = document.createElement('div');
-    card.className = 'card';
+    const card = document.createElement('div'); card.className='card';
     card.innerHTML = `<div class="title">${day[0]}</div>`;
-    [day[1], day[2], day[3]].forEach(meal => {
-      const box = document.createElement('div');
-      box.className = 'card';
-      box.style.background = '#121315';
+    [day[1],day[2],day[3]].forEach(meal => {
+      const box = document.createElement('div'); box.className='card'; box.style.background='#121315';
       box.innerHTML = `<div class="title" style="font-size:16px">${meal[0]}</div>`;
-      meal[1].forEach(line => {
-        const p = document.createElement('div'); p.className='small'; p.textContent = "• " + line;
-        box.appendChild(p);
-      });
+      meal[1].forEach(line => { const p=document.createElement('div'); p.className='small'; p.textContent="• "+line; box.appendChild(p); });
       card.appendChild(box);
     });
     mealWrap.appendChild(card);
   });
 
-  // --- Shopping list ---
+  // Shopping list
   const shopWrap = document.getElementById('shopping');
   const SHOP_KEY = "mb_shop_v1";
   let items = JSON.parse(localStorage.getItem(SHOP_KEY) || "null");
-  if (!items) {
-    items = shoppingDefaults.map(([name, qty]) => ({name, qty, checked:false}));
-    localStorage.setItem(SHOP_KEY, JSON.stringify(items));
-  }
-  function renderShop() {
+  if (!items) { items = shoppingDefaults.map(([name, qty]) => ({name, qty, checked:false})); localStorage.setItem(SHOP_KEY, JSON.stringify(items)); }
+  function renderShop(){
     shopWrap.innerHTML = "";
     items.forEach((it, idx) => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      const row = document.createElement('div');
-      row.className = 'row';
-      const cb = document.createElement('input');
-      cb.type = 'checkbox'; cb.checked = !!it.checked;
+      const card = document.createElement('div'); card.className='card';
+      const row = document.createElement('div'); row.className='row';
+      const cb = document.createElement('input'); cb.type='checkbox'; cb.checked=!!it.checked;
       cb.addEventListener('change', () => { items[idx].checked = cb.checked; localStorage.setItem(SHOP_KEY, JSON.stringify(items)); });
       const label = document.createElement('div');
       label.innerHTML = `<div class="title" style="margin:0">${it.name}</div><div class="small">${it.qty}</div>`;
-      row.appendChild(cb); row.appendChild(label);
-      card.appendChild(row);
-      shopWrap.appendChild(card);
+      row.appendChild(cb); row.appendChild(label); card.appendChild(row); shopWrap.appendChild(card);
     });
   }
   renderShop();
-  document.getElementById('resetShop').addEventListener('click', () => {
-    items.forEach(it => it.checked = false);
-    localStorage.setItem(SHOP_KEY, JSON.stringify(items));
-    renderShop();
-  });
+  document.getElementById('resetShop').addEventListener('click', () => { items.forEach(it => it.checked=false); localStorage.setItem(SHOP_KEY, JSON.stringify(items)); renderShop(); });
 
-  // --- Progress logs ---
+  // Progress logs
   const LOG_KEY = "mb_logs_v1";
   let logs = JSON.parse(localStorage.getItem(LOG_KEY) || "[]");
   const logsWrap = document.getElementById('logs');
-  function renderLogs() {
-    logsWrap.innerHTML = "";
-    if (!logs.length) {
-      const c = document.createElement('div'); c.className='card small'; c.textContent = "Ajoute ta première entrée pour suivre ta progression.";
-      logsWrap.appendChild(c); return;
-    }
-    logs.forEach((log, i) => {
-      const card = document.createElement('div'); card.className='card';
-      const d = new Date(log.date);
-      card.innerHTML = `<div class="title">${d.toLocaleDateString('fr-FR')}</div>
+  function renderLogs(){
+    logsWrap.innerHTML="";
+    if(!logs.length){ const c=document.createElement('div'); c.className='card small'; c.textContent="Ajoute ta première entrée pour suivre ta progression."; logsWrap.appendChild(c); return; }
+    logs.forEach((log,i) => {
+      const card=document.createElement('div'); card.className='card';
+      const d=new Date(log.date);
+      card.innerHTML=`<div class="title">${d.toLocaleDateString('fr-FR')}</div>
         <div class="small">Poids: ${log.bodyweight} kg</div>
         <div class="small">Bench: ${log.bench} • Squat: ${log.squat} • Deadlift: ${log.deadlift} • OHP: ${log.ohp}</div>
         <button class="btn ghost" data-i="${i}">Supprimer</button>`;
       logsWrap.appendChild(card);
     });
-    logsWrap.querySelectorAll('button[data-i]').forEach(btn => {
-      btn.addEventListener('click', e => {
-        const i = parseInt(e.target.getAttribute('data-i'));
-        logs.splice(i,1);
-        localStorage.setItem(LOG_KEY, JSON.stringify(logs));
-        renderLogs();
-      });
+    logsWrap.querySelectorAll('button[data-i]').forEach(btn=>{
+      btn.addEventListener('click',e=>{ const i=parseInt(e.target.getAttribute('data-i')); logs.splice(i,1); localStorage.setItem(LOG_KEY, JSON.stringify(logs)); renderLogs(); });
     });
   }
   renderLogs();
-  document.getElementById('saveLog').addEventListener('click', () => {
-    const bw = parseFloat(document.getElementById('bw').value);
-    const bench = parseFloat(document.getElementById('bench').value);
-    const squat = parseFloat(document.getElementById('squat').value);
-    const deadlift = parseFloat(document.getElementById('deadlift').value);
-    const ohp = parseFloat(document.getElementById('ohp').value);
-    if ([bw,bench,squat,deadlift,ohp].some(v => isNaN(v))) return;
-    logs.unshift({date: new Date().toISOString(), bodyweight: bw, bench, squat, deadlift, ohp});
+  document.getElementById('saveLog').addEventListener('click',()=>{
+    const bw=parseFloat(document.getElementById('bw').value);
+    const bench=parseFloat(document.getElementById('bench').value);
+    const squat=parseFloat(document.getElementById('squat').value);
+    const deadlift=parseFloat(document.getElementById('deadlift').value);
+    const ohp=parseFloat(document.getElementById('ohp').value);
+    if([bw,bench,squat,deadlift,ohp].some(v=>isNaN(v))) return;
+    logs.unshift({date:new Date().toISOString(), bodyweight:bw, bench, squat, deadlift, ohp});
     localStorage.setItem(LOG_KEY, JSON.stringify(logs));
-    document.querySelectorAll('#bw,#bench,#squat,#deadlift,#ohp').forEach(i => i.value="");
+    document.querySelectorAll('#bw,#bench,#squat,#deadlift,#ohp').forEach(i=>i.value="");
     renderLogs();
   });
 
-  // --- PWA install ---
+  // Service worker (offline)
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js');
-    });
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
   }
   </script>
 </body>
